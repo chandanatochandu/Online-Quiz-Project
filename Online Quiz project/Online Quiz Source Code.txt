@@ -1,0 +1,269 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+struct questions
+{
+	int qno;
+	char question[60];
+	char op1[19];
+	char op2[19];
+	char op3[19];
+	char op4[19];
+	int answer;
+};
+struct questions q1;
+struct student
+{
+	char name[19];
+	char idnumber[19];
+	char password[19];
+	double score;
+};
+struct student s1;
+void startexam(void);
+void getquestions()
+{
+	int c=1;
+	FILE *fp;
+	fp=fopen("questions.txt","a+");
+	while(c==1)
+	{
+		printf("Enter question number\n");
+		scanf("%d",&q1.qno);
+		printf("Enter the question\n");
+		scanf("%[^\t]",q1.question);
+		printf("Enter the four options\n");
+		scanf("%s %s %s %S ",q1.op1,q1.op2,q1.op3,q1.op4);
+		printf("Enter the answer option number\n");
+		scanf("%d",&q1.answer);
+		fwrite(&q1,sizeof(q1),1,fp);
+		printf("Do you want to enter another question?  1.yes    2.No\n");
+		scanf("%d",&c);
+	}
+	fclose(fp);
+} 
+
+void registration()
+{
+	int c=1;
+	FILE *fp;
+	fp=fopen("student.txt","a+");
+	while(c==1)
+	{
+		printf("Enter your name\n");
+		scanf("%s",s1.name);
+		printf("Enter your ID number\n");
+		scanf("%s",s1.idnumber);
+		printf("Enter the password you like\n");
+		scanf("%s",s1.password);
+		fwrite(&s1,sizeof(s1),1,fp);
+		printf("Is there any other student to register?  1.yes   2.No  \n");
+		scanf("%d",&c);
+	}
+	fclose(fp);
+}
+
+void changeapassword()
+{
+	long c;
+	char id[19],pass[19];
+	FILE *fp=fopen("student.txt","r+");
+	printf("Please re-enter your ID again\n");
+	scanf("%s",id);
+	printf("Set your new password\n");
+	scanf("%s",pass);
+	while((fread(&s1,sizeof(s1),1,fp))>0)
+	{
+		if(!strcmp(s1.idnumber,id))
+		{
+			strcpy(s1.password,pass);
+			c=ftell(fp)-sizeof(s1);
+			fseek(fp,c,0);
+			fwrite(&s1,sizeof(s1),1,fp);
+			break;
+		}
+	}
+	fclose(fp);
+	printf("\nTry now and start your exam\n");
+}
+
+void writeexam()
+{
+	int ch,ch1;
+	printf("Are you registered?\n\t1.press 1 if you want to Register now\n\t2.Press 2 if you are ready to start exam\n");
+	scanf("%d",&ch);
+	if(ch==1)
+	{
+		registration();
+		printf("Are you ready to start the exam\n\t1.yes\t2.No\n");
+		scanf("%d",&ch1);
+		if(ch1==1)
+		startexam();
+		else
+		return;
+	}
+	if(ch==2)
+	startexam();
+}
+
+void startexam()
+{
+	int ans,counter=0,count=0,change;
+	char id[19],p[19];
+	FILE *qp,*sp,*mp;
+	qp=fopen("questions.txt","r");
+	sp=fopen("student.txt","r+");
+	mp=fopen("marks.txt","a+");
+	if(sp==NULL)
+	printf("Error in student.txt file");
+	do
+	{
+		if(change==2)
+		sp=fopen("student.txt","r+");
+		rewind(qp);
+		rewind(sp);
+		printf("Enter your ID number\n");
+		scanf("%s",id);
+		printf("Enter your password\n");
+		scanf("%s",p);
+		while((fread(&s1,sizeof(s1),1,sp))==1)
+		{
+			if((!strcmp(s1.idnumber,id))&&(!strcmp(s1.password,p)))
+			{
+				printf("\nEach question carries 10marks, for wrong answer 0marks.\nALL THE BEST\n");
+				while((fread(&q1,sizeof(q1),1,qp))>0)
+				{
+					printf("\n");
+					printf("%d . %s\n",q1.qno,q1.question);
+					printf("1)%s\n",q1.op1);
+					printf("2)%s\n",q1.op2);
+					printf("3)%s\n",q1.op3);
+					printf("4)%s\n",q1.op4);
+					printf("Enter your answer\n");
+					scanf("%d",&ans);
+					if(ans==q1.answer)
+					{
+						printf("RIGHT ANSWER !!...\n");
+						count=count+1;
+					}
+					else
+					{
+						printf("WRONG ANSWER  !!...\n");
+						printf("CORRECT ANSWER    ::%D\n",q1.answer);
+					}
+				}
+				counter=1;
+				s1.score=count*10;
+				printf("------------------------\n");
+				printf("\nYOUR SCORE IS  :: %f\n",s1.score);
+				printf("------------------------\n");
+				fwrite(&s1,sizeof(s1),1,mp);
+			}
+		}
+		if(counter==1)
+		break;
+		if(counter==0)
+		{
+			printf("\n\nSorry! Wrong password or ID number\n1.To retry\n2.To change password\n3.To quit\n\n");
+			scanf("%d",&change);
+			if(change==2)
+			{
+				fclose(sp);
+				changeapassword();
+			}
+			if(change==3)
+			{
+				return;
+			}
+		}
+	}while(change==1||change==2);
+	fclose(qp);
+	fclose(sp);
+	fclose(mp);
+}
+
+void watchscore()
+{
+	int sh;
+	FILE *fp;
+	while(1)
+	{
+		printf("\n_____________________________________\n");
+		printf("1.All students\n2.students how got more than 30\n3.students how got less than or equal to 30\n0.exit\n");
+		printf("Enter your choice\n");
+		printf("____________________________________________\n");
+		scanf("%d",&sh);
+		switch(sh)
+		{
+			case 1:fp=fopen("marks.txt","r");
+			while((fread(&s1,sizeof(s1),1,fp))>0)
+			{
+				printf("Student ID number  :  %s\n",s1.idnumber);
+				printf("Student name  :  %s\n",s1.name);
+				printf("Student score :  %f\n",s1.score);
+			}
+			fclose(fp);
+			break;
+			
+			case 2:fp=fopen("marks.txt","r");
+			while((fread(&s1,sizeof(s1),1,fp))>0)
+			{
+				if(s1.score>30)
+				{
+					printf("Student ID number  :  %s\n",s1.idnumber);
+					printf("Student name  :  %s\n",s1.name);
+					printf("Student score :  %f\n",s1.score);
+				}
+			}
+			fclose(fp);
+			break;
+			
+			case 3:fp=fopen("marks.txt","r");
+			while((fread(&s1,sizeof(s1),1,fp))>0)
+			{
+				if(s1.score<=30)
+				{
+					printf("Student ID number  :  %s\n",s1.idnumber);
+					printf("Student name  :  %s\n",s1.name);
+					printf("Student score :  %f\n",s1.score);
+				}
+			}
+			fclose(fp);
+			break;
+			
+			case 0 :break;
+			default: printf("Enter a valid choice\n");
+				break;
+		}//end of switch
+		if(sh==0)
+		break;
+	}//end of while
+}
+
+int main()
+{
+	int ch;
+	while(1)
+	{
+		printf("==================================\n");
+		printf("1.registration\n2.start exam\n3.watch the score\n0.exit\n");
+		printf("Enter your choice\n");
+		printf("==================================\n");
+		scanf("%d",&ch);
+		switch(ch)
+		{
+			case 1 : registration();
+				break;
+			case 2 : writeexam();
+				break;
+			case 3 : watchscore();
+				break;
+			case 5 : getquestions();
+				break;
+			case 0 : printf("\n*****************THANK YOU*******************\n");
+				exit(0);
+			default:printf("Invalid choice, try again!\n");
+				break;
+		}
+	}
+}
